@@ -12,11 +12,11 @@ let getFileContents = function(filename, res) {
 };
 
 
-const getUserToDoLists = function (user) {
+let getUserToDoLists = function (user) {
   return showTodoTitle(userDB[0][user].todo);
 };
 
-const showTodoTitle = function (todoList) {
+let showTodoTitle = function (todoList) {
   let titles='';
   let id=0;
   todoList.forEach(function (todo) {
@@ -26,16 +26,16 @@ const showTodoTitle = function (todoList) {
   return titles;
 }
 
-const getSpecificTodo = (number,req,res) =>{
+let getSpecificTodo = (number,req,res) =>{
   let name=req.user.userName;
   let todoToShow=userDB[0][name].todo[number];
   respondedTodo(todoToShow,res);
 }
 
-const respondedTodo = function (todo,res) {
+let respondedTodo = function (todo,res) {
   let items='';
   todo.contents.forEach(function (item) {
-    items+=`<b>${item.name}</b>`;
+    items+=`<b>${item.name}</b><br>`;
   });
   res.setHeader('Content-type','text/html');
   res.write('<a href="logout">Log out</a><br><a href="/home.html">HOME</a><br>')
@@ -43,21 +43,25 @@ const respondedTodo = function (todo,res) {
   res.end();
 }
 
-const displayComments = function () {
-  let comments = '';
-  commentsFile.forEach(function (comment) {
-    comments+=`<p class="comments">${comment.date}, Name: ${comment.name},
-    comment: ${comment.comment}</p>`
+let saveTodo = function (req,user) {
+  let dataToPush={};
+  dataToPush.name=req.body.title.replace(/\+/g,' ');
+  dataToPush.description=req.body.description.replace(/\+/g,' ');
+  dataToPush.contents=[];
+  let items=req.body.items.split('%0D%0A');
+  items.forEach(function (item) {
+    let id=0;
+    dataToPush.contents.push(
+      {
+        id : id,
+        name: item,
+        status: true
+      }
+    );
+    id++;
   });
-  return comments;
-};
-
-let recordComment = function (req) {
-  req.body.date=new Date().toLocaleString();
-  req.body.name=req.user.userName;
-  req.body.comment=req.body.comment.replace(/\+/g,' ');
-  commentsFile.unshift(req.body);
-  fs.writeFile("./data/comments.json", JSON.stringify(commentsFile,null,2), function(err) {
+  userDB[0][user].todo.push(dataToPush);
+  fs.writeFile("./data/userDB.json", JSON.stringify(userDB,null,2), function(err) {
     if (err) return;
   });
 };
@@ -132,8 +136,8 @@ app.get('/viewTodo.html',(req,res)=>{
   res.end();
 });
 app.post('/addTodo',(req,res)=>{
-  recordComment(req);
-  res.redirect('/userBook.html');
+  saveTodo(req,req.user.userName);
+  res.redirect('/addTodo.html');
 });
 app.postUse(getSpecificTodo);
 app.postUse(serveFile);
