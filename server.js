@@ -30,7 +30,7 @@ let showTodoTitle = function (todoList) {
   });
   return titles;
 }
-let respondedTodo = function (id,todo,res) {
+let serveTodo = function (id,todo,res) {
   let items='';
   todo.contents.forEach(function (item) {
     items+=`<b>${item.name}</b><br>`;
@@ -39,7 +39,7 @@ let respondedTodo = function (id,todo,res) {
   res.write('<a href="logout">Log out</a><br><a href="/home.html">HOME</a><br>');
   res.write(`<a href="editTodo/${id}">Edit Todo</a><br>`);
   res.write(`<a href="deleteTodo/${id}">Delete Todo</a><br>`);
-  res.write(`<h2>${todo.name}</h2><h5>${todo.description}</h5>${items}`);
+  res.write(`<h1>${todo.name}</h1><h2>${todo.description}</h2>${items}`);
   res.end();
 }
 let saveTodo = function (req,user) {
@@ -53,7 +53,7 @@ let saveTodo = function (req,user) {
     todoTable[req.body.id]=dataToPush;
   else
     todoTable.push(dataToPush);
-    updateDB();
+  updateDB();
 };
 let prepareDataObject = function (dataToPush,items) {
   let list=items.split('%0D%0A');
@@ -75,7 +75,7 @@ let getTodoContent = function (req,id) {
   let name=req.user.userName;
   return userDB[0][name].todo[id];
 }
-let showEditableContents = function (todo,res,id) {
+let getEditableContents = function (todo,res,id) {
   text=displayForm.replace('"title" value=""',`"title" value="${todo.name}"`);
   text=text.replace('"description" value=""',`"description" value="${todo.description}"`);
   let items='';
@@ -90,7 +90,7 @@ let showEditableContents = function (todo,res,id) {
 
 let editTodo = (id,req,res) => {
   let todoToShow=getTodoContent(req,id);
-  showEditableContents(todoToShow,res,id);
+  getEditableContents(todoToShow,res,id);
 }
 let deleteTodo = (id,req,res) => {
   let name=req.user.userName;
@@ -105,7 +105,7 @@ let remove = function (array, element,id) {
 };
 let getSpecificTodo = (id,req,res) =>{
   let todoToShow=getTodoContent(req,id);
-  respondedTodo(id,todoToShow,res);
+  serveTodo(id,todoToShow,res);
 }
 
 let logRequest = (req,res)=>{
