@@ -12,7 +12,11 @@ let getFileContents = function(filename, res) {
   if (fs.existsSync(filePath))
     return fs.readFileSync(filePath);
 };
-
+let updateDB = function () {
+  fs.writeFile("./data/userDB.json", JSON.stringify(userDB,null,2),
+  function(err) {if (err) return;
+    });
+}
 
 let getUserToDoLists = function (user) {
   return showTodoTitle(userDB[0][user].todo);
@@ -49,9 +53,7 @@ let saveTodo = function (req,user) {
     todoTable[req.body.id]=dataToPush;
   else
     todoTable.push(dataToPush);
-  fs.writeFile("./data/userDB.json", JSON.stringify(userDB,null,2), function(err) {
-    if (err) return;
-  });
+    updateDB();
 };
 let prepareDataObject = function (dataToPush,items) {
   let list=items.split('%0D%0A');
@@ -95,6 +97,7 @@ let deleteTodo = (id,req,res) => {
   let array=userDB[0][name].todo;
   let element=userDB[0][name].todo[id];
   remove(array,element,id);
+  updateDB();
   res.redirect('/home.html');
 };
 let remove = function (array, element,id) {
