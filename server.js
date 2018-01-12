@@ -26,8 +26,21 @@ const showTodoTitle = function (todoList) {
   return titles;
 }
 
-const getSpecificTodo = function (user,number) {
-  console.log(userDB[0][user].todo[number-1]);
+const getSpecificTodo = (number,req,res) =>{
+  let name=req.user.userName;
+  let todoToShow=userDB[0][name].todo[number];
+  respondedTodo(todoToShow,res);
+}
+
+const respondedTodo = function (todo,res) {
+  let items='';
+  todo.contents.forEach(function (item) {
+    items+=`<b>${item.name}</b>`;
+  });
+  res.setHeader('Content-type','text/html');
+  res.write('<a href="logout">Log out</a><br><a href="/home.html">HOME</a><br>')
+  res.write(`<h2>${todo.name}</h2><h5>${todo.description}</h5>${items}`);
+  res.end();
 }
 
 const displayComments = function () {
@@ -113,7 +126,6 @@ app.get('/logout',(req,res)=>{
   res.redirect('/login');
 });
 app.get('/viewTodo.html',(req,res)=>{
-  getSpecificTodo(req.user.userName,1);
   contents = getFileContents('/viewTodo.html');
   userTodo = getUserToDoLists(req.user.userName);
   res.write(contents+userTodo);
@@ -123,6 +135,7 @@ app.post('/addTodo',(req,res)=>{
   recordComment(req);
   res.redirect('/userBook.html');
 });
+app.postUse(getSpecificTodo);
 app.postUse(serveFile);
 
 

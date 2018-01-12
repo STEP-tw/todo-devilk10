@@ -25,13 +25,22 @@ let invoke = function(req,res){
   if(handler) handler(req,res);
 }
 let serveUrl = function (req,res) {
-  let handler = this._postUse;
+  let handler = this._postUse[1];
   handler(req.url,req,res);
 }
+
+let serveFilesThatNotExist = function (req,res) {
+  let url=req.url.slice(1);
+  if (!isNaN(url)&&req.user) {
+    let handler = this._postUse[0];
+    handler(url,req,res);
+  }
+}
+
 const initialize = function(){
   this._handlers = {GET:{},POST:{}};
   this._preprocess = [];
-  this._postUse;
+  this._postUse = [];
 };
 const get = function(url,handler){
   this._handlers.GET[url] = handler;
@@ -43,7 +52,7 @@ const use = function(handler){
   this._preprocess.push(handler);
 };
 const postUse = function (handler) {
-    this._postUse=handler;
+    this._postUse.push(handler);
 };
 let urlIsOneOf = function(urls){
   return urls.includes(this.url);
@@ -65,6 +74,8 @@ const main = function(req,res){
     });
     if(res.finished) return;
     invoke.call(this,req,res);
+    if(res.finished) return;
+    serveFilesThatNotExist.call(this,req,res);
     if(res.finished) return;
     serveUrl.call(this,req,res);
   });
