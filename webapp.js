@@ -41,7 +41,13 @@ let serveFilesThatNotExist = function (req,res) {
     let handler = this._postUse[2];
     handler(number,req,res);
   }
-}
+  if (req.url.startsWith('/deleteTodo')&&req.user) {
+    let position=req.url.lastIndexOf('/')
+    let number=req.url.slice(position+1);
+    let handler = this._postUse[3];
+    handler(number,req,res);
+  }
+};
 
 const initialize = function(){
   this._handlers = {GET:{},POST:{}};

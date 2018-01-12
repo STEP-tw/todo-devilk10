@@ -33,7 +33,8 @@ let respondedTodo = function (id,todo,res) {
   });
   res.setHeader('Content-type','text/html');
   res.write('<a href="logout">Log out</a><br><a href="/home.html">HOME</a><br>');
-  res.write(`<a href="editTodo/${id}">Edit Todo</a>`);
+  res.write(`<a href="editTodo/${id}">Edit Todo</a><br>`);
+  res.write(`<a href="deleteTodo/${id}">Delete Todo</a><br>`);
   res.write(`<h2>${todo.name}</h2><h5>${todo.description}</h5>${items}`);
   res.end();
 }
@@ -52,7 +53,7 @@ let saveTodo = function (req,user) {
     if (err) return;
   });
 };
-let prepareDataObject=function (dataToPush,items) {
+let prepareDataObject = function (dataToPush,items) {
   let list=items.split('%0D%0A');
   list.forEach(function (item) {
     let id=0;
@@ -67,7 +68,6 @@ let prepareDataObject=function (dataToPush,items) {
   });
   return dataToPush
 }
-
 
 let getTodoContent = function (req,id) {
   let name=req.user.userName;
@@ -90,6 +90,16 @@ let editTodo = (id,req,res) => {
   let todoToShow=getTodoContent(req,id);
   showEditableContents(todoToShow,res,id);
 }
+let deleteTodo = (id,req,res) => {
+  let name=req.user.userName;
+  let array=userDB[0][name].todo;
+  let element=userDB[0][name].todo[id];
+  remove(array,element,id);
+  res.redirect('/home.html');
+};
+let remove = function (array, element,id) {
+  return array.splice(id, 1);
+};
 let getSpecificTodo = (id,req,res) =>{
   let todoToShow=getTodoContent(req,id);
   respondedTodo(id,todoToShow,res);
@@ -171,7 +181,7 @@ app.post('/addTodo',(req,res)=>{
 app.postUse(getSpecificTodo);
 app.postUse(serveFile);
 app.postUse(editTodo);
-
+app.postUse(deleteTodo);
 
 const PORT = 5000;
 let server = http.createServer(app);
