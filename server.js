@@ -1,11 +1,9 @@
 let fs = require('fs');
 const http = require('http');
 const WebApp = require('./webapp');
-let registered_users = [{userName:'chetan',name:'chetan sangle'},{userName:'ketan',name:'ketan sangle'}];
+let registered_users = [{userName:'k',name:'chetan sangle'},{userName:'a',name:'ketan sangle'}];
 let toS = o=>JSON.stringify(o,null,2);
-let commentsFile = require('./data/userDB.json');
-// let guestBook=fs.readFileSync("public/userBook.html","utf-8");
-
+let userDB = require('./data/userDB.json');
 let getFileContents = function(filename, res) {
   let defaultDir='./public';
   let filePath = defaultDir + filename;
@@ -13,7 +11,26 @@ let getFileContents = function(filename, res) {
     return fs.readFileSync(filePath);
 };
 
-const displayComments=function () {
+
+const getUserToDoLists = function (user) {
+  return showTodoTitle(userDB[0][user].todo);
+};
+
+const showTodoTitle = function (todoList) {
+  let titles='';
+  let id=0;
+  todoList.forEach(function (todo) {
+    titles+=`<a href="${id}">${todo.name}</a><br>`;
+    id++;
+  });
+  return titles;
+}
+
+const getSpecificTodo = function (user,number) {
+  console.log(userDB[0][user].todo[number-1]);
+}
+
+const displayComments = function () {
   let comments = '';
   commentsFile.forEach(function (comment) {
     comments+=`<p class="comments">${comment.date}, Name: ${comment.name},
@@ -21,6 +38,7 @@ const displayComments=function () {
   });
   return comments;
 };
+
 let recordComment = function (req) {
   req.body.date=new Date().toLocaleString();
   req.body.name=req.user.userName;
@@ -38,8 +56,7 @@ let logRequest = (req,res)=>{
     `COOKIES=> ${toS(req.cookies)}`,
     `BODY=> ${toS(req.body)}`,''].join('\n');
   fs.appendFile('request.log',text,()=>{});
-
-  //console.log(`${req.method} ${req.url}`);
+  console.log(`${req.method} ${req.url}`);
 }
 let loadUser = (req,res)=>{
   let sessionid = req.cookies.sessionid;
@@ -52,7 +69,7 @@ let redirectLoggedInUserToHome = (req,res)=>{
   if(req.urlIsOneOf(['/','/login']) && req.user) res.redirect('/home.html')
 }
 let redirectLoggedOutUserToLogin = (req,res)=>{
-  if(req.urlIsOneOf(['/','/logout','/home.html']) && !req.user) res.redirect('/login');
+  if(req.urlIsOneOf(['/','/logout','/home.html','/addTodo','/viewTodo.html','/addTodo.html']) && !req.user) res.redirect('/login');
 }
 
 let serveFile = (url,req,res)=>{
@@ -90,20 +107,19 @@ app.post('/login',(req,res)=>{
   user.sessionid = sessionid;
   res.redirect('/home.html');
 });
-app.get('/logout?',(req,res)=>{
+app.get('/logout',(req,res)=>{
   res.setHeader('Set-Cookie',[`loginFailed=false,Expires=${new Date(1).toUTCString()}`,`sessionid=0,Expires=${new Date(1).toUTCString()}`]);
   delete req.user.sessionid;
   res.redirect('/login');
 });
-app.get('/guestBook.html',(req,res)=>{
-  if (req.user)
-    contents = guestBook.replace("userName",req.user.userName);
-  else
-    contents = getFileContents('/guestBook.html');
-  res.write(contents+displayComments());
+app.get('/viewTodo.html',(req,res)=>{
+  getSpecificTodo(req.user.userName,1);
+  contents = getFileContents('/viewTodo.html');
+  userTodo = getUserToDoLists(req.user.userName);
+  res.write(contents+userTodo);
   res.end();
 });
-app.post('/comment',(req,res)=>{
+app.post('/addTodo',(req,res)=>{
   recordComment(req);
   res.redirect('/userBook.html');
 });
