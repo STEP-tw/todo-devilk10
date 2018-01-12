@@ -4,6 +4,8 @@ const WebApp = require('./webapp');
 let registered_users = [{userName:'k',name:'chetan sangle'},{userName:'a',name:'ketan sangle'}];
 let toS = o=>JSON.stringify(o,null,2);
 let userDB = require('./data/userDB.json');
+let displayForm=fs.readFileSync("public/editTodo.html","utf-8");
+
 let getFileContents = function(filename, res) {
   let defaultDir='./public';
   let filePath = defaultDir + filename;
@@ -15,7 +17,6 @@ let getFileContents = function(filename, res) {
 let getUserToDoLists = function (user) {
   return showTodoTitle(userDB[0][user].todo);
 };
-
 let showTodoTitle = function (todoList) {
   let titles='';
   let id=0;
@@ -25,31 +26,35 @@ let showTodoTitle = function (todoList) {
   });
   return titles;
 }
-
-let getSpecificTodo = (number,req,res) =>{
-  let name=req.user.userName;
-  let todoToShow=userDB[0][name].todo[number];
-  respondedTodo(todoToShow,res);
-}
-
-let respondedTodo = function (todo,res) {
+let respondedTodo = function (id,todo,res) {
   let items='';
   todo.contents.forEach(function (item) {
     items+=`<b>${item.name}</b><br>`;
   });
   res.setHeader('Content-type','text/html');
-  res.write('<a href="logout">Log out</a><br><a href="/home.html">HOME</a><br>')
+  res.write('<a href="logout">Log out</a><br><a href="/home.html">HOME</a><br>');
+  res.write(`<a href="editTodo/${id}">Edit Todo</a>`);
   res.write(`<h2>${todo.name}</h2><h5>${todo.description}</h5>${items}`);
   res.end();
 }
-
 let saveTodo = function (req,user) {
   let dataToPush={};
+  let todoTable=userDB[0][user].todo;
   dataToPush.name=req.body.title.replace(/\+/g,' ');
   dataToPush.description=req.body.description.replace(/\+/g,' ');
   dataToPush.contents=[];
-  let items=req.body.items.split('%0D%0A');
-  items.forEach(function (item) {
+  dataToPush=prepareDataObject(dataToPush,req.body.items);
+  if (req.body.id)
+    todoTable[req.body.id]=dataToPush;
+  else
+    todoTable.push(dataToPush);
+  fs.writeFile("./data/userDB.json", JSON.stringify(userDB,null,2), function(err) {
+    if (err) return;
+  });
+};
+let prepareDataObject=function (dataToPush,items) {
+  let list=items.split('%0D%0A');
+  list.forEach(function (item) {
     let id=0;
     dataToPush.contents.push(
       {
@@ -60,11 +65,35 @@ let saveTodo = function (req,user) {
     );
     id++;
   });
-  userDB[0][user].todo.push(dataToPush);
-  fs.writeFile("./data/userDB.json", JSON.stringify(userDB,null,2), function(err) {
-    if (err) return;
+  return dataToPush
+}
+
+
+let getTodoContent = function (req,id) {
+  let name=req.user.userName;
+  return userDB[0][name].todo[id];
+}
+let showEditableContents = function (todo,res,id) {
+  text=displayForm.replace('"title" value=""',`"title" value="${todo.name}"`);
+  text=text.replace('"description" value=""',`"description" value="${todo.description}"`);
+  let items='';
+  todo.contents.forEach(function (item) {
+    items+=`${item.name}\n`;
   });
-};
+  text=text.replace('showItems',`${items}`);
+  text=text.replace('idval',`${id}`);
+  res.write(text);
+  res.end();
+}
+
+let editTodo = (id,req,res) => {
+  let todoToShow=getTodoContent(req,id);
+  showEditableContents(todoToShow,res,id);
+}
+let getSpecificTodo = (id,req,res) =>{
+  let todoToShow=getTodoContent(req,id);
+  respondedTodo(id,todoToShow,res);
+}
 
 let logRequest = (req,res)=>{
   let text = ['------------------------------',
@@ -141,6 +170,7 @@ app.post('/addTodo',(req,res)=>{
 });
 app.postUse(getSpecificTodo);
 app.postUse(serveFile);
+app.postUse(editTodo);
 
 
 const PORT = 5000;
