@@ -1,15 +1,28 @@
 {
-  "name": "To-Do app",
-  "version": "1.0.0",
-  "description": "A webapp to maintain multiple to-do of an user ",
-  "dependencies": {
-    "chai": "^4.1.2"
+  "name": "todoapp",
+  "version": "0.0.1",
+  "description": "## Objective",
+  "main": "server.js",
+  "directories": {
+    "test": "test"
   },
+  "dependencies": {},
   "devDependencies": {
-    "mocha": "^3.4.2"
+    "chai": "^4.1.2",
+    "mocha": "^4.1.0"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "start": "node server.js"
   },
-  "author": ""
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/STEP-tw/todo-devilk10.git"
+  },
+  "author": "k10",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/STEP-tw/todo-devilk10/issues"
+  },
+  "homepage": "https://github.com/STEP-tw/todo-devilk10#readme"
 }

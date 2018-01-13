@@ -1,14 +1,9 @@
 let fs = require('fs');
 const WebApp = require('./webapp');
-let registered_users = [{
-  userName: 'k',
-  name: 'chetan sangle'
-}, {
-  userName: 'a',
-  name: 'ketan sangle'
-}];
+let registered_users = [{userName: 'a'}];
 let toS = o => JSON.stringify(o, null, 2);
-let userDB = require('./data/userDB.json');
+let db=fs.readFileSync('./data/userDB.json');
+let userDB=JSON.parse(db);
 let displayForm = fs.readFileSync("public/editTodo.html", "utf-8");
 
 let getFileContents = function(filename, res) {
@@ -139,7 +134,7 @@ let redirectLoggedInUserToHome = (req, res) => {
   if (req.urlIsOneOf(['/', '/login']) && req.user) res.redirect('/home.html')
 }
 let redirectLoggedOutUserToLogin = (req, res) => {
-  if (req.urlIsOneOf(['/', '/logout', '/home.html', '/addTodo', '/viewTodo.html', '/addTodo.html']) && !req.user) res.redirect('/login');
+  if (req.urlIsOneOf(['/', '/logout', '/home.html', '/viewTodo.html', '/editTodo.html','/addTodo.html']) && !req.user) res.redirect('/login');
 }
 
 let serveFile = (url, req, res) => {

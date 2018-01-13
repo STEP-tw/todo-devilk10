@@ -44,7 +44,7 @@ describe('app',()=>{
   })
   describe('POST /login',()=>{
     it('redirects to home.html for valid user',done=>{
-      request(app,{method:'POST',url:'/login',body:'userName=k'},res=>{
+      request(app,{method:'POST',url:'/login',body:'userName=a'},res=>{
         th.should_be_redirected_to(res,'/home.html');
         th.should_not_have_cookie(res,'message');
         done();
@@ -53,6 +53,15 @@ describe('app',()=>{
     it('redirects to login with message for invalid user',done=>{
       request(app,{method:'POST',url:'/login',body:'username=badUser'},res=>{
         th.should_be_redirected_to(res,'/login');
+        done();
+      })
+    })
+  })
+  describe('GET /viewTodo.html',()=>{
+    it('redirects to /login if user is not logged in',done=>{
+      request(app,{method:'GET',url:'/viewTodo.html'},res=>{
+        th.should_be_redirected_to(res,'/login');
+        assert.equal(res.statusCode,302);
         done();
       })
     })
