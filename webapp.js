@@ -1,12 +1,13 @@
+const qs = require('querystring');
 const toKeyValue = kv=>{
-    let parts = kv.split('=');
-    return {key:parts[0].trim(),value:parts[1].trim()};
+  let parts = kv.split('=');
+  return {key:parts[0].trim(),value:parts[1].trim()};
 };
 const accumulate = (o,kv)=> {
   o[kv.key] = kv.value;
   return o;
 };
-const parseBody = text=> text && text.split('&').map(toKeyValue).reduce(accumulate,{}) || {};
+const parseBody = text=> qs.parse(text) || {};
 let redirect = function(path){
   // console.log(`redirecting to ${path}`);
   this.statusCode = 302;
@@ -70,7 +71,6 @@ let urlIsOneOf = function(urls){
   return urls.includes(this.url);
 }
 const main = function(req,res){
-  // console.log(req.headers);
   res.redirect = redirect.bind(res);
   req.urlIsOneOf = urlIsOneOf.bind(req);
   req.cookies = parseCookies(req.headers.cookie||'');
