@@ -1,195 +1,52 @@
 let fs = require('fs');
 const WebApp = require('./webapp');
-let registered_users = [{userName: 'a'}];
-let toS = o => JSON.stringify(o, null, 2);
-let db=fs.readFileSync('./data/userDB.json');
-let userDB=JSON.parse(db);
-let displayForm = fs.readFileSync("public/editTodo.html", "utf-8");
+let registered_users = [{userName:'chetan',name:'chetan sangle'},{userName:'ketan',name:'ketan sangle'}];
+let StaticFileHandler=require('./custom_handlers/static_file_handler.js');
+let CompositeHandler=require('./custom_handlers/composite_handler.js');
 
-let getFileContents = function(filename, res) {
-  let defaultDir = './public';
-  let filePath = defaultDir + filename;
-  if (fs.existsSync(filePath))
-    return fs.readFileSync(filePath);
-};
-let updateDB = function() {
-  fs.writeFile("./data/userDB.json", JSON.stringify(userDB, null, 2),
-    function(err) {
-      if (err) return;
-    });
-}
-
-let getUserToDoLists = function(user) {
-  return showTodoTitle(userDB[0][user].todo);
-};
-let showTodoTitle = function(todoList) {
-  let titles = '';
-  let id = 0;
-  todoList.forEach(function(todo) {
-    titles += `<a href="${id}">${todo.name}</a><br>`;
-    id++;
-  });
-  return titles;
-}
-let serveTodo = function(id, todo, res) {
-  let items = '';
-  res.setHeader('Content-Type', 'text/html');
-  res.write('<a href="logout">Log out</a><br><a href="/home.html">HOME</a><br>');
-  res.write(`<a href="editTodo/${id}">Edit Todo</a><br>`);
-  res.write(`<a href="deleteTodo/${id}">Delete Todo</a><br>`);
-  res.write(`<h1>${todo.name}</h1><h3>${todo.description}</h3>${getItems(todo)}`);
-  res.end();
-}
-let getItems = function (todo) {
-  let tag = 0;
-  let items='';
-  todo.contents.forEach(function(item) {
-    items += `<input type="checkbox" id=${tag} value=""><b>${item.name}</b><br>`;
-    tag++;
-  });
-  return items;
-}
-
-let saveTodo = function(req, user) {
-  let dataToPush = {};
-  let todoTable = userDB[0][user].todo;
-  dataToPush.name = req.body.title;
-  dataToPush.description = req.body.description;
-  dataToPush.contents = [];
-  dataToPush = prepareDataObject(dataToPush, req.body.items);
-  if (req.body.id)
-    todoTable[req.body.id] = dataToPush;
-  else
-    todoTable.push(dataToPush);
-  updateDB();
-};
-let prepareDataObject = function(dataToPush, items) {
-  let list = items.split('\n');
-  let id = 0;
-  list.forEach(function(item) {
-    dataToPush.contents.push({
-      id: id++,
-      name: item,
-      status: true
-    });
-  });
-  return dataToPush
-}
-
-let getTodoContent = function(req, id) {
-  let name = req.user.userName;
-  return userDB[0][name].todo[id];
-}
-let getEditableContents = function(todo, res, id) {
-  text = displayForm.replace('"title" value=""', `"title" value="${todo.name}"`);
-  text = text.replace('"description" value=""', `"description" value="${todo.description}"`);
-  let items = '';
-  todo.contents.forEach(function(item) {
-    items += `${item.name}\n`;
-  });
-  text = text.replace('showItems', `${items}`);
-  text = text.replace('idval', `${id}`);
-  res.write(text);
-  res.end();
-}
-
-let editTodo = (id, req, res) => {
-  let todoToShow = getTodoContent(req, id);
-  getEditableContents(todoToShow, res, id);
-}
-let deleteTodo = (id, req, res) => {
-  let name = req.user.userName;
-  let array = userDB[0][name].todo;
-  let element = userDB[0][name].todo[id];
-  remove(array, id);
-  updateDB();
-  res.redirect('/home.html');
-};
-let remove = function(array, id) {
-  return array.splice(id, 1);
-};
-let getSpecificTodo = (id, req, res) => {
-  let todoToShow = getTodoContent(req, id);
-  serveTodo(id, todoToShow, res);
-}
-
-let logRequest = (req, res) => {
-  let text = ['------------------------------',
-    `${req.method} ${req.url}`,
-    `HEADERS=> ${toS(req.headers)}`,
-    `COOKIES=> ${toS(req.cookies)}`,
-    `BODY=> ${toS(req.body)}`, ''
-  ].join('\n');
-  fs.appendFile('request.log', text, () => {});
-  console.log(`${req.method} ${req.url}`);
-}
-let loadUser = (req, res) => {
+let fileHandler = new StaticFileHandler("public");
+let allHandler = new CompositeHandler();
+allHandler.addHandler(fileHandler);
+let loadUser = (req,res)=>{
   let sessionid = req.cookies.sessionid;
-  let user = registered_users.find(u => u.sessionid == sessionid);
-  if (sessionid && user) {
+  let user = registered_users.find(u=>u.sessionid==sessionid);
+  if(sessionid && user){
     req.user = user;
   }
 };
-let redirectLoggedInUserToHome = (req, res) => {
-  if (req.urlIsOneOf(['/', '/login']) && req.user) res.redirect('/home.html')
+let redirectLoggedInUserToHome = (req,res)=>{
+  if(req.urlIsOneOf(['/login','/']) && req.user) res.redirect('/home.html')
 }
-let redirectLoggedOutUserToLogin = (req, res) => {
-  if (req.urlIsOneOf(['/', '/logout', '/home.html', '/viewTodo.html', '/editTodo.html','/addTodo.html']) && !req.user) res.redirect('/login');
+let redirectLoggedOutUserToLogin = (req,res)=>{
+  if(req.urlIsOneOf(['/logout','/']) && !req.user) res.redirect('/login');
 }
-
-let serveFile = (url, req, res) => {
-  let contents = getFileContents(url);
-  if (contents)
-    res.write(contents);
-  else
-    handleUnsupportedURL(res);
-  res.end();
-};
-let handleUnsupportedURL = function(res) {
-  res.statusCode = 404;
-  res.write("page not found");
-};
 
 let app = WebApp.create();
-app.use(logRequest);
+app.use(allHandler.requestHandler())
 app.use(loadUser);
 app.use(redirectLoggedInUserToHome);
 app.use(redirectLoggedOutUserToLogin);
-app.get('/login', (req, res) => {
-  res.setHeader('Content-Type', 'text/html');
-  res.write('<form method="POST"> <input name="userName" value="a"> <input type="submit"></form>');
+app.get('/login',(req,res)=>{
+  res.setHeader('Content-type','text/html');
+  res.write('<form method="POST"> <input name="userName"><input name="place"> <input type="submit"></form>');
   res.end();
 });
-app.post('/login', (req, res) => {
-  let user = registered_users.find(u => u.userName == req.body.userName);
-  if (!user) {
-    res.setHeader('Set-Cookie', `logInFailed=true`);
+app.post('/login',(req,res)=>{
+  let user = registered_users.find(u=>u.userName==req.body.userName);
+  if(!user) {
+    res.setHeader('Set-Cookie',`logInFailed=true`);
     res.redirect('/login');
     return;
   }
   let sessionid = new Date().getTime();
-  res.setHeader('Set-Cookie', `sessionid=${sessionid}`);
+  res.setHeader('Set-Cookie',`sessionid=${sessionid}`);
   user.sessionid = sessionid;
   res.redirect('/home.html');
 });
-app.get('/logout', (req, res) => {
-  res.setHeader('Set-Cookie', [`loginFailed=false,Expires=${new Date(1).toUTCString()}`, `sessionid=0,Expires=${new Date(1).toUTCString()}`]);
+app.get('/logout',(req,res)=>{
+  res.setHeader('Set-Cookie',[`loginFailed=false,Expires=${new Date(1).toUTCString()}`,`sessionid=0,Expires=${new Date(1).toUTCString()}`]);
   delete req.user.sessionid;
   res.redirect('/login');
 });
-app.get('/viewTodo.html', (req, res) => {
-  contents = getFileContents('/viewTodo.html');
-  userTodo = getUserToDoLists(req.user.userName);
-  res.write(contents + userTodo);
-  res.end();
-});
-app.post('/addTodo', (req, res) => {
-  saveTodo(req, req.user.userName);
-  res.redirect('/addTodo.html');
-});
-app.postUse(getSpecificTodo);
-app.postUse(serveFile);
-app.postUse(editTodo);
-app.postUse(deleteTodo);
 
 module.exports = app;

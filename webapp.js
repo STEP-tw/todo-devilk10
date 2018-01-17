@@ -1,15 +1,13 @@
-const qs = require('querystring');
 const toKeyValue = kv=>{
-  let parts = kv.split('=');
-  return {key:parts[0].trim(),value:parts[1].trim()};
+    let parts = kv.split('=');
+    return {key:parts[0].trim(),value:parts[1].trim()};
 };
 const accumulate = (o,kv)=> {
   o[kv.key] = kv.value;
   return o;
 };
-const parseBody = text=> qs.parse(text) || {};
+const parseBody = text=> text && text.split('&').map(toKeyValue).reduce(accumulate,{}) || {};
 let redirect = function(path){
-  // console.log(`redirecting to ${path}`);
   this.statusCode = 302;
   this.setHeader('location',path);
   this.end();
@@ -23,37 +21,17 @@ const parseCookies = text=> {
 }
 let invoke = function(req,res){
   let handler = this._handlers[req.method][req.url];
-  if(handler) handler(req,res);
+  if(handler)
+    handler(req,res);
 }
 let serveUrl = function (req,res) {
-  let handler = this._postUse[1];
+  let handler = this._postUse;
   handler(req.url,req,res);
 }
-
-let serveFilesThatNotExist = function (req,res) {
-  let url=req.url.slice(1);
-  if (!isNaN(url)&&req.user) {
-    let handler = this._postUse[0];
-    handler(url,req,res);
-  }
-  if (req.url.startsWith('/editTodo')&&req.user) {
-    let position=req.url.lastIndexOf('/')
-    let number=req.url.slice(position+1);
-    let handler = this._postUse[2];
-    handler(number,req,res);
-  }
-  if (req.url.startsWith('/deleteTodo')&&req.user) {
-    let position=req.url.lastIndexOf('/')
-    let number=req.url.slice(position+1);
-    let handler = this._postUse[3];
-    handler(number,req,res);
-  }
-};
-
 const initialize = function(){
   this._handlers = {GET:{},POST:{}};
   this._preprocess = [];
-  this._postUse = [];
+  this._postUse;
 };
 const get = function(url,handler){
   this._handlers.GET[url] = handler;
@@ -65,7 +43,7 @@ const use = function(handler){
   this._preprocess.push(handler);
 };
 const postUse = function (handler) {
-    this._postUse.push(handler);
+    this._postUse=handler;
 };
 let urlIsOneOf = function(urls){
   return urls.includes(this.url);
@@ -86,8 +64,6 @@ const main = function(req,res){
     });
     if(res.finished) return;
     invoke.call(this,req,res);
-    if(res.finished) return;
-    serveFilesThatNotExist.call(this,req,res);
     if(res.finished) return;
     serveUrl.call(this,req,res);
   });
