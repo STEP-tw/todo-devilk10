@@ -1,6 +1,7 @@
 let Todo = require('../lib/todo.js');
 let Task = require('../lib/task.js');
 let User = require('../lib/user.js');
+let UserManager = require('../lib/userManager.js');
 let assert = require('chai').assert;
 
 describe('todo',()=>{
@@ -152,5 +153,41 @@ describe('User',()=>{
     user.editTodoTitle(0,'This is todo');
     let expected={1: {"title": "This is todo","description": "This is description","id": 1,"taskTag":0,"task": {}}}
     assert.deepEqual(user.getTodos(),expected);
+  })
+})
+
+describe('UserManager',()=>{
+  describe('getUser',()=>{
+    it("should give the required user",()=>{
+      let userHandler = new UserManager();
+      let pranoy = new User("pranoy");
+      userHandler.addUser("pranoy");
+      assert.deepEqual(userHandler.getUser("pranoy"),pranoy);
+    })
+  })
+  describe('getAllUser',()=>{
+    it("should give name of all users",()=>{
+      let userHandler = new UserManager();
+      userHandler.addUser("pranoy");
+      userHandler.addUser("pallabi");
+      assert.deepEqual(userHandler.getAllUser(),["pranoy","pallabi"]);
+    })
+  })
+  describe('addUser',()=>{
+    it("should add new user in user list",()=>{
+      let userHandler = new UserManager();
+      let ketan = new User("ketan");
+      userHandler.addUser("ketan");
+      assert.deepEqual(userHandler.getUser("ketan"),ketan);
+    })
+  })
+  describe('deleteUser',()=>{
+    it("should delete user from user list",()=>{
+      let userHandler = new UserManager();
+      userHandler.addUser("ketan");
+      userHandler.addUser("pallabi");
+      userHandler.deleteUser("pallabi");
+      assert.deepEqual(userHandler.getAllUser(),["ketan"]);
+    })
   })
 })
